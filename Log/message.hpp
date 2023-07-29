@@ -1,4 +1,7 @@
 
+#ifndef __MY_LOGMSG__
+#define __MY_LOGMSG__
+
 #include"level.hpp"
 #include"util.hpp"
 #include<thread>
@@ -18,7 +21,7 @@ namespace log
 
         LogMsg(
             log::LogLevel::value level,
-            time_t line,
+            size_t line,
             const std::string file,
             const std::string logger,
             const std::string payload
@@ -33,3 +36,5 @@ namespace log
         {}
     };
 }
+
+#endif // !__MY_LOGMSG__

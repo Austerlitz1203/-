@@ -1,3 +1,6 @@
+#ifndef __MY_UTIL__
+#define __MY_UTIL__
+
 #include <iostream>
 #include <string>
 #include <ctime>
@@ -69,3 +72,5 @@ namespace log
         };
     }
 }
+
+#endif // !__MY_UTIL__
