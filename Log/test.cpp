@@ -14,26 +14,36 @@ using namespace util;
 int main()
 {
     //  logger 的测试
-    string name("test-logger");
-    LogLevel::value level = LogLevel::value::WARN;
-    Formatter::ptr fmt(new Formatter());
-    LogSink::ptr outlpt= SinkFactory::create<StdOutSink>();
-    LogSink::ptr filelpt = SinkFactory::create<FileSink>("./logfile/filelpt.log");
-    LogSink::ptr rolllpt = SinkFactory::create<RollSinkBySize>("./logfile/roll-", 1024 * 1024);
-    vector<LogSink::ptr> ptrs= {outlpt,filelpt,rolllpt};
-    SyncLogger::ptr  slogger(new SyncLogger(name,level,fmt,ptrs));
+    // string name("test-logger");
+    // LogLevel::value level = LogLevel::value::WARN;
+    // Formatter::ptr fmt(new Formatter());
+    // LogSink::ptr outlpt= SinkFactory::create<StdOutSink>();
+    // LogSink::ptr filelpt = SinkFactory::create<FileSink>("./logfile/filelpt.log");
+    // LogSink::ptr rolllpt = SinkFactory::create<RollSinkBySize>("./logfile/roll-", 1024 * 1024);
+    // vector<LogSink::ptr> ptrs= {outlpt,filelpt,rolllpt};
+    // SyncLogger::ptr  slogger(new SyncLogger(name,level,fmt,ptrs));
 
-    slogger->debug(__FILE__,__LINE__,"%s","测试日志");
+    // 建造者测试
+    std::unique_ptr<LoggerBuilder> lb(new LocalLoggerBuilder());
+    lb->buildLoggerName("sync-logger");
+    lb->buildLoggerType(LoggerType::SyncLogger);
+    lb->buildLoggerLevel(LogLevel::value::DEBUG);
+    lb->buildFormatter("%d{%H:%M:%S}%T%m%n");
+    lb->buildSink<StdOutSink>();
+    lb->buildSink<RollSinkBySize>("./logfile/roll-", 1024 * 1024);
+    Logger::ptr slogger=lb->build();
+
+    slogger->debug(__FILE__, __LINE__, "%s", "测试日志");
     slogger->info(__FILE__, __LINE__, "%s", "测试日志");
     slogger->warn(__FILE__, __LINE__, "%s", "测试日志");
     slogger->error(__FILE__, __LINE__, "%s", "测试日志");
     slogger->fatal(__FILE__, __LINE__, "%s", "测试日志");
 
     size_t cursize=0,count=0;
-    while(cursize<10*1024*1024)
+    while(cursize<5*1024*1024)
     {
         slogger->fatal(__FILE__,__LINE__,"测试日志-%d",count++);
-        cursize+=20;
+        cursize+=40;
     }
 
 

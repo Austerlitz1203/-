@@ -23,7 +23,6 @@ namespace log
                std::vector<LogSink::ptr> sink)
             : _logger_name(name), _limit_level(level), _formatter(formatter), _sinks(sink.begin(), sink.end())
         {
-            
         }
 
         // 构造日志消息对象并格式化，得到格式化之后的字符串然后输出
@@ -161,13 +160,96 @@ namespace log
         void dolog(const char *data, size_t len) override
         {
             std::unique_lock<std::mutex> lock(_mutex);
-            if(_sinks.empty()) return;
-            for(auto &sink:_sinks)
+            if (_sinks.empty())
+                return;
+            for (auto &sink : _sinks)
             {
-                sink->log(data,len);
+                sink->log(data, len);
             }
         }
     };
+
+    enum class LoggerType
+    {
+        SyncLogger,
+        ASyncLogger,
+    };
+
+    /*使用建造者模式来建造日志器，而不要让用户直接去建造日志器，简化用户的复杂度*/
+    // 一.抽象出一个日志器建造者类，完成零部件的构建和日志器的创建
+    // 1.设置日志器类型
+    // 2.将不同类型的日志器的创建，放到同一个日治其建造者类里面完成
+    class LoggerBuilder
+    {
+    public:
+        LoggerBuilder()
+            : _logger_type(LoggerType::SyncLogger)
+            ,_limit_level(LogLevel::value::DEBUG)
+        {
+        }
+
+        void buildLoggerType(LoggerType lt)
+        {
+            _logger_type=lt;
+        }
+
+        void buildLoggerName(const string &name)
+        {
+            _logger_name=name;
+        }
+
+        void buildLoggerLevel(LogLevel::value level)
+        {
+            _limit_level = level;
+        }
+
+        void buildFormatter(const string &pattern)
+        {
+            _formatter = std::make_shared<Formatter>(pattern);
+        }
+
+        template <typename LogSinkType, typename ...Args>
+        void buildSink(Args &&...args)
+        {
+            LogSink::ptr psink= SinkFactory::create<LogSinkType>(std::forward<Args>(args)...);
+            _sinks.push_back(psink);
+        }
+
+        virtual Logger::ptr build() = 0;
+
+    protected:
+        LoggerType _logger_type;
+        string _logger_name;
+        LogLevel::value _limit_level;
+        Formatter::ptr _formatter;
+        std::vector<LogSink::ptr> _sinks;
+    };
+
+    // 2.派生出具体的建造者类
+    class LocalLoggerBuilder : public LoggerBuilder
+    {
+    public:
+        Logger::ptr build() override
+        {
+            assert(!_logger_name.empty());
+            if(_formatter.get() == nullptr)
+            {
+                _formatter=std::make_shared<Formatter>();
+            }
+
+            if(_sinks.empty())
+            {
+                buildSink<StdOutSink>();
+            }
+
+            if(_logger_type == LoggerType::ASyncLogger){
+
+            }
+
+            return std::make_shared<SyncLogger>(_logger_name,_limit_level,_formatter,_sinks);
+        }
+    };
+
 }
 
 #endif
