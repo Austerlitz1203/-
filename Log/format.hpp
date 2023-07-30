@@ -151,6 +151,8 @@ namespace log
     class Formatter
     {
     public:
+        using ptr=std::shared_ptr<Formatter>;
+        
         Formatter(const string &pattern = "[%d{%H:%M:%S}][%t][%c][%f:%l][%p]%T%m%n")
             : _pattern(pattern)
         {
