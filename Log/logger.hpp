@@ -6,6 +6,7 @@
 #include "sink.hpp"
 #include "format.hpp"
 #include "level.hpp"
+#include"lopper.hpp"
 #include <atomic>
 #include <mutex>
 #include <vector>
@@ -168,6 +169,41 @@ namespace log
             }
         }
     };
+
+    class ASyncLogger: public Logger
+    {
+    public:
+        ASyncLogger(const string &name,
+                    LogLevel::value level,
+                    Formatter::ptr &formatter,
+                    std::vector<LogSink::ptr> sink,
+                    AsyncType lopper_type)
+            : Logger(name, level, formatter, sink)
+            ,_lopper(std::make_shared<AsyncLopper>(std::bind(&ASyncLogger::reallog,this,std::placeholders::_1),lopper_type))
+        {
+        }
+
+        // 将数据写入缓冲区
+        void log(const char* data,size_t len)
+        {
+            _lopper->push(data,len);
+        }
+
+        // 实际落地函数——将缓冲区的数据落地
+        void reallog(Buffer& buf)
+        {
+            if(_sinks.empty()) return;
+            for(auto &s:_sinks)
+            {
+                s->log(buf.begin(),buf.readAbleSize());
+            }
+        }
+
+    private:
+        AsyncLopper::ptr _lopper;
+
+    };
+
 
     enum class LoggerType
     {

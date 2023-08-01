@@ -21,7 +21,7 @@ namespace log
         void push(const char* data,size_t len)
         {
             // 考虑到缓冲区可能不够的情况，两种方法：1.错误，返回。2.扩容。
-            //if(len > writeAbleSize()) return;
+            // 将两种方法的实现，放到 lopper里面，buffer不需要关心这个
             ensureEnoughSize(len);
             std::copy(data,data+len,&_buffer[_writer_idx]);
             moveWriter(len);
