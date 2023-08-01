@@ -14,34 +14,61 @@ using namespace util;
 
 int main()
 {
+    // 异步日志器测试
+
+    std::unique_ptr<LoggerBuilder> lb(new LocalLoggerBuilder());
+    lb->buildLoggerName("async-logger");
+    lb->buildLoggerType(LoggerType::ASyncLogger);
+    lb->buildLoggerLevel(LogLevel::value::DEBUG);
+    lb->buildEnableUnsafe();
+    lb->buildFormatter("%d{%H:%M:%S}%T%m%n");
+    lb->buildSink<StdOutSink>();
+    lb->buildSink<FileSink>("./logfile/async-test.log");
+    Logger::ptr slogger=lb->build();
+
+    slogger->debug(__FILE__, __LINE__, "%s", "测试日志");
+    slogger->info(__FILE__, __LINE__, "%s", "测试日志");
+    slogger->warn(__FILE__, __LINE__, "%s", "测试日志");
+    slogger->error(__FILE__, __LINE__, "%s", "测试日志");
+    slogger->fatal(__FILE__, __LINE__, "%s", "测试日志");
+
+    size_t count=0;
+    while(count<300000)
+    {
+        slogger->fatal(__FILE__,__LINE__,"测试日志-%d",count++);
+    }
+
+
+
+
     // 缓冲区测试
-    std::ifstream ifs("./logfile/test.log",std::ios::binary);
-    if(!ifs.good()) cout<<"open file error"<<endl;
-    string tmp;
-    ifs.seekg(0,std::ios::end);
-    size_t tsize=ifs.tellg();
-    ifs.seekg(0,std::ios::beg);
-    tmp.resize(tsize);
-    ifs.read(&tmp[0],tsize);
-    if(ifs.good() == false) cout<<"read error"<<endl;
-    ifs.close();
+    // std::ifstream ifs("./logfile/test.log",std::ios::binary);
+    // if(!ifs.good()) cout<<"open file error"<<endl;
+    // string tmp;
+    // ifs.seekg(0,std::ios::end);
+    // size_t tsize=ifs.tellg();
+    // ifs.seekg(0,std::ios::beg);
+    // tmp.resize(tsize);
+    // ifs.read(&tmp[0],tsize);
+    // if(ifs.good() == false) cout<<"read error"<<endl;
+    // ifs.close();
 
-    Buffer buffer;
-    for(int i=0;i<tsize;i++)
-    {
-        buffer.push(&tmp[i],1);
-    }
+    // Buffer buffer;
+    // for(int i=0;i<tsize;i++)
+    // {
+    //     buffer.push(&tmp[i],1);
+    // }
 
 
-    std::ofstream ofs("./logfile/tmp.log",std::ios::binary);
-    size_t size=buffer.readAbleSize();
-    cout<<size<<endl;
-    for(int i=0;i<size;i++)
-    {
-        ofs.write(buffer.begin(),1);
-        buffer.moveReader(1);
-    }
-    ofs.close();
+    // std::ofstream ofs("./logfile/tmp.log",std::ios::binary);
+    // size_t size=buffer.readAbleSize();
+    // cout<<size<<endl;
+    // for(int i=0;i<size;i++)
+    // {
+    //     ofs.write(buffer.begin(),1);
+    //     buffer.moveReader(1);
+    // }
+    // ofs.close();
 
 
 

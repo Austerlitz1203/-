@@ -30,7 +30,13 @@ namespace log
             , _atype(atype)
         {
         }
-        void stop()
+
+        ~AsyncLopper()
+        {
+            stop();
+        }
+
+         void stop()
         {
             _stop = true;
             _con_cond.notify_all(); // 唤醒所有的工作线程
@@ -52,12 +58,14 @@ namespace log
     private:
         void threadEntry() // 线程入口函数
         {
-            while (!_stop)
+            while (1)
             {
                 // 判断生产者缓冲区（第一次进入，消费者缓冲区肯定无数据）有无数据，有则交换，无则阻塞
                 {
                     std::unique_lock<std::mutex> lock(_mutex);
-                    // 1.要消费者缓冲区不为空才停止等待
+                    // 退出标志被设置，并且生产缓冲区无数据，才可以退出，否则会出现退出标志被设置，但是生产缓冲区还有数据就退出的情况
+                    if( _stop && _pro_buf.empty()) break;
+                    // 1.要生产者缓冲区不为空才停止等待
                     _con_cond.wait(lock, [&]()
                                    { return  _stop || !_pro_buf.empty(); });
                     _con_buf.swap(_pro_buf);

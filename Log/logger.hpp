@@ -184,7 +184,7 @@ namespace log
         }
 
         // 将数据写入缓冲区
-        void log(const char* data,size_t len)
+        void dolog(const char* data,size_t len)
         {
             _lopper->push(data,len);
         }
@@ -221,6 +221,7 @@ namespace log
         LoggerBuilder()
             : _logger_type(LoggerType::SyncLogger)
             ,_limit_level(LogLevel::value::DEBUG)
+            ,_lopper_type(AsyncType::ASYNC_SAFE)
         {
         }
 
@@ -243,6 +244,10 @@ namespace log
         {
             _formatter = std::make_shared<Formatter>(pattern);
         }
+        void buildEnableUnsafe()
+        {
+            _lopper_type=AsyncType::ASYNC_UNSAFE;
+        }
 
         template <typename LogSinkType, typename ...Args>
         void buildSink(Args &&...args)
@@ -254,6 +259,7 @@ namespace log
         virtual Logger::ptr build() = 0;
 
     protected:
+        AsyncType _lopper_type;
         LoggerType _logger_type;
         string _logger_name;
         LogLevel::value _limit_level;
@@ -279,7 +285,7 @@ namespace log
             }
 
             if(_logger_type == LoggerType::ASyncLogger){
-
+                return std::make_shared<ASyncLogger>(_logger_name, _limit_level, _formatter, _sinks,_lopper_type);
             }
 
             return std::make_shared<SyncLogger>(_logger_name,_limit_level,_formatter,_sinks);
