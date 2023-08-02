@@ -12,11 +12,29 @@ using namespace std;
 using namespace log;
 using namespace util;
 
+
+void test()
+{
+    Logger::ptr slogger=LoggerManager::getInstance().getLogger("async-logger");
+    slogger->debug(__FILE__, __LINE__, "%s", "测试日志");
+    slogger->info(__FILE__, __LINE__, "%s", "测试日志");
+    slogger->warn(__FILE__, __LINE__, "%s", "测试日志");
+    slogger->error(__FILE__, __LINE__, "%s", "测试日志");
+    slogger->fatal(__FILE__, __LINE__, "%s", "测试日志");
+
+    size_t count = 0;
+    while (count < 300000)
+    {
+        slogger->fatal(__FILE__, __LINE__, "测试日志-%d", count++);
+    }
+}
+
 int main()
 {
-    // 异步日志器测试
 
-    std::unique_ptr<LoggerBuilder> lb(new LocalLoggerBuilder());
+    // 日志器管理器测试
+
+    std::unique_ptr<LoggerBuilder> lb(new GlobalLoggerBuilder());
     lb->buildLoggerName("async-logger");
     lb->buildLoggerType(LoggerType::ASyncLogger);
     lb->buildLoggerLevel(LogLevel::value::DEBUG);
@@ -24,19 +42,35 @@ int main()
     lb->buildFormatter("%d{%H:%M:%S}%T%m%n");
     lb->buildSink<StdOutSink>();
     lb->buildSink<FileSink>("./logfile/async-test.log");
-    Logger::ptr slogger=lb->build();
+    lb->build();
 
-    slogger->debug(__FILE__, __LINE__, "%s", "测试日志");
-    slogger->info(__FILE__, __LINE__, "%s", "测试日志");
-    slogger->warn(__FILE__, __LINE__, "%s", "测试日志");
-    slogger->error(__FILE__, __LINE__, "%s", "测试日志");
-    slogger->fatal(__FILE__, __LINE__, "%s", "测试日志");
+    test();
 
-    size_t count=0;
-    while(count<300000)
-    {
-        slogger->fatal(__FILE__,__LINE__,"测试日志-%d",count++);
-    }
+
+
+    // 异步日志器测试
+
+    // std::unique_ptr<LoggerBuilder> lb(new LocalLoggerBuilder());
+    // lb->buildLoggerName("async-logger");
+    // lb->buildLoggerType(LoggerType::ASyncLogger);
+    // lb->buildLoggerLevel(LogLevel::value::DEBUG);
+    // lb->buildEnableUnsafe();
+    // lb->buildFormatter("%d{%H:%M:%S}%T%m%n");
+    // lb->buildSink<StdOutSink>();
+    // lb->buildSink<FileSink>("./logfile/async-test.log");
+    // Logger::ptr slogger=lb->build();
+
+    // slogger->debug(__FILE__, __LINE__, "%s", "测试日志");
+    // slogger->info(__FILE__, __LINE__, "%s", "测试日志");
+    // slogger->warn(__FILE__, __LINE__, "%s", "测试日志");
+    // slogger->error(__FILE__, __LINE__, "%s", "测试日志");
+    // slogger->fatal(__FILE__, __LINE__, "%s", "测试日志");
+
+    // size_t count=0;
+    // while(count<300000)
+    // {
+    //     slogger->fatal(__FILE__,__LINE__,"测试日志-%d",count++);
+    // }
 
 
 

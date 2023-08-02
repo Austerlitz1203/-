@@ -11,6 +11,7 @@
 #include <mutex>
 #include <vector>
 #include <stdarg.h>
+#include<unordered_map>
 
 namespace log
 {
@@ -24,6 +25,11 @@ namespace log
                std::vector<LogSink::ptr> sink)
             : _logger_name(name), _limit_level(level), _formatter(formatter), _sinks(sink.begin(), sink.end())
         {
+        }
+
+        const string& getLoggerName()
+        {
+            return _logger_name;
         }
 
         // 构造日志消息对象并格式化，得到格式化之后的字符串然后输出
@@ -292,6 +298,89 @@ namespace log
         }
     };
 
+
+
+    class LoggerManager
+    {
+    public:
+        static LoggerManager& getInstance()
+        {
+            // 在C++11之后，针对静态局部变量，编译器实现了线程安全
+            // 静态局部变量没有构造完成之前，其他线程进入会阻塞
+            static LoggerManager eton;
+            return eton;
+        }
+        void addLogger(Logger::ptr &logger)
+        {
+            if(hasLogger(logger->getLoggerName())) return;
+            std::unique_lock<std::mutex> lock(_mutex);
+            _loggers.insert(std::make_pair(logger->getLoggerName(),logger));
+        }
+
+        bool hasLogger(const string& name)
+        {
+            std::unique_lock<std::mutex> lock(_mutex);
+            auto it=_loggers.find(name);
+            if(it == _loggers.end())
+                return false;
+            return true;
+        }
+
+        Logger::ptr getLogger(const string& name)
+        {
+            std::unique_lock<std::mutex> lock(_mutex);
+            auto it = _loggers.find(name);
+            if (it == _loggers.end())
+                return Logger::ptr();
+            return it->second;
+        }
+        Logger::ptr rootLogger()
+        {
+            return _root_logger;
+        }
+    private:
+        LoggerManager(){
+            // 构造函数里面不能用 GlobalLoggerBuilder ，会陷入死循环，LoggerManager 还没构造完成，就调用addLogger
+            std::unique_ptr<LoggerBuilder> builder(new LocalLoggerBuilder());
+            builder->buildLoggerName("root");
+            _root_logger=builder->build();
+            _loggers.insert(std::make_pair("root",_root_logger));
+        }
+    private:
+        std::mutex _mutex;
+        Logger::ptr _root_logger; // 默认的日志器
+        std::unordered_map<string,Logger::ptr> _loggers;
+    };
+
+    // 全局建造者类,创建全局日志器，自动添加到日志器管理者里面
+    class GlobalLoggerBuilder : public LoggerBuilder
+    {
+    public:
+        Logger::ptr build() override
+        {
+            assert(!_logger_name.empty());
+            if (_formatter.get() == nullptr)
+            {
+                _formatter = std::make_shared<Formatter>();
+            }
+
+            if (_sinks.empty())
+            {
+                buildSink<StdOutSink>();
+            }
+            Logger::ptr logger;
+            if (_logger_type == LoggerType::ASyncLogger)
+            {
+                logger = std::make_shared<ASyncLogger>(_logger_name, _limit_level, _formatter, _sinks, _lopper_type);
+            }
+            else
+            {
+                logger = std::make_shared<SyncLogger>(_logger_name, _limit_level, _formatter, _sinks);
+            }
+            LoggerManager::getInstance().addLogger(logger);
+            return logger;
+        }
+    };
 }
 
 #endif
