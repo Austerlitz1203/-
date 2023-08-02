@@ -5,6 +5,7 @@
 #include "sink.hpp"
 #include "logger.hpp"
 #include"buffer.hpp"
+#include"log.hpp"
 #include <unistd.h>
 #include<vector>
 
@@ -15,18 +16,33 @@ using namespace util;
 
 void test()
 {
-    Logger::ptr slogger=LoggerManager::getInstance().getLogger("async-logger");
-    slogger->debug(__FILE__, __LINE__, "%s", "测试日志");
-    slogger->info(__FILE__, __LINE__, "%s", "测试日志");
-    slogger->warn(__FILE__, __LINE__, "%s", "测试日志");
-    slogger->error(__FILE__, __LINE__, "%s", "测试日志");
-    slogger->fatal(__FILE__, __LINE__, "%s", "测试日志");
+    Logger::ptr slogger = getLogger("async-logger");
+    slogger->debug( "%s", "测试日志");
+    slogger->info( "%s", "测试日志");
+    slogger->warn( "%s", "测试日志");
+    slogger->error("%s", "测试日志");
+    slogger->fatal("%s", "测试日志");
 
     size_t count = 0;
     while (count < 300000)
     {
-        slogger->fatal(__FILE__, __LINE__, "测试日志-%d", count++);
+        slogger->fatal("测试日志-%d", count++);
     }
+
+
+//     DEBUG("%s", "测试日志");
+//     INFO("%s", "测试日志");
+//     WARN("%s", "测试日志");
+//     ERROR("%s", "测试日志");
+//     FATAL("%s", "测试日志");
+
+//     size_t count = 0;
+//     while (count < 300000)
+//     {
+//         FATAL("测试日志-%d", count++);
+//     }
+
+
 }
 
 int main()
@@ -39,7 +55,7 @@ int main()
     lb->buildLoggerType(LoggerType::ASyncLogger);
     lb->buildLoggerLevel(LogLevel::value::DEBUG);
     lb->buildEnableUnsafe();
-    lb->buildFormatter("%d{%H:%M:%S}%T%m%n");
+    lb->buildFormatter("[%f][%l]%d{%H:%M:%S}%T%m%n");
     lb->buildSink<StdOutSink>();
     lb->buildSink<FileSink>("./logfile/async-test.log");
     lb->build();
